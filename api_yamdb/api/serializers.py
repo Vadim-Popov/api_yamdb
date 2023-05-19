@@ -1,9 +1,57 @@
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
 from reviews.models import Review
 from reviews.models import Comments
 
+from rest_framework import serializers
+from api.permissions import IsAdminOrStaff
+from users.models import User
+from reviews.models import Category, Genre
+
+USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутствие спецсимволов
+
+
+class SignUpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'username')
+
+
+class AuthTokenSerializer(serializers.Serializer):
+    username = serializers.RegexField(
+        regex=USERNAME_CHECK,
+        max_length=150,
+        required=True
+    )
+    confirmation_code = serializers.CharField(
+        required=True,
+        max_length=16,
+    )
+
+
+class UserSerializer(serializers.ModelSerializer):
+    permission_classes = (IsAdminOrStaff,)
+
+    class Meta:
+        model = User
+        fields = (
+            'username', 'email', 'first_name',
+            'last_name', 'bio', 'role'
+        )
+
+
+class CategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Category
+        fields = ['name', 'slug']
+
+
+class GenreSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Genre
+        fields = ['name', 'slug']
 
 class ReviewSerializer(serializers.ModelSerializer):
     title = serializers.SlugRelatedField(
@@ -54,3 +102,4 @@ class CommentsSerializer(serializers.ModelSerializer):
         model = Comments
         fields = '__all__'
         read_only_fields = ('pub_date',)
+
