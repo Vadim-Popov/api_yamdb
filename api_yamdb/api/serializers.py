@@ -1,12 +1,14 @@
 from django.conf import settings
+from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from reviews.models import Review
 from reviews.models import Comments
 
+
 from rest_framework import serializers
 from api.permissions import IsAdminOrStaff
 from users.models import User
-from reviews.models import Category, Genre
+from reviews.models import Category, Genre, Title
 
 USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутствие спецсимволов
 
@@ -102,4 +104,35 @@ class CommentsSerializer(serializers.ModelSerializer):
         model = Comments
         fields = '__all__'
         read_only_fields = ('pub_date',)
+
+
+class TitleSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        slug_field='slug',
+        queryset=Category.objects.all())
+    genre = serializers.SlugRelatedField(
+        many=True,
+        slug_field='slug',
+        queryset=Genre.objects.all())
+    rating = serializers.SerializerMethodField()
+
+    def get_rating(self, obj):
+        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
+
+    class Meta:
+        model = Title
+        fields = ['id', 'name', 'year', 'rating', 'description', 'genre', 'category']
+
+
+class TitleGetSerializer(serializers.ModelSerializer):
+    category = CategorySerializer()
+    genre = GenreSerializer(many=True)
+    rating = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Title
+        fields = '__all__'
+
+    def get_rating(self, obj):
+        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
 

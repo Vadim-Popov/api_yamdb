@@ -2,7 +2,24 @@ from django.conf import settings
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-from user.models import User
+from users.models import User
+
+
+class Title(models.Model):
+    """Модель произведений."""
+    
+    name = models.CharField('Название произведения', max_length=256)
+    year = models.PositiveSmallIntegerField('Год произведения', db_index=True)
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='titles')
+    genre = models.ManyToManyField('Genre', blank=True, related_name='titles')
+    description = models.TextField('Описание', null=True, blank=True)
+ 
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
 
 class Review(models.Model):
     """Модель отзывы на произведения."""
@@ -91,6 +108,7 @@ class Comments(models.Model):
     def __str__(self) -> str:
         return self.text[:15]
 
+
 class Category(models.Model):
     """Модель категорий."""
     name = models.CharField('Название категории', max_length=256)
@@ -113,19 +131,3 @@ class Genre(models.Model):
 
     def __str__(self):
         return self.slug
-
-
-class Title(models.Model):
-    """Модель произведений."""
-    name = models.CharField('Название произведения', max_length=256)
-    year = models.PositiveSmallIntegerField('Год произведения', db_index=True)
-    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='titles')
-    genre = models.ManyToManyField('Genre', blank=True, related_name='titles')
-    description = models.TextField('Описание', null=True, blank=True)
- 
-    class Meta:
-        ordering = ['name']
-
-    def __str__(self):
-        return self.name
-
