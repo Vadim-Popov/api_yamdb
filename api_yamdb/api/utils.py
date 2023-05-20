@@ -1,3 +1,5 @@
+"""Модуль утилит приложения."""
+
 import random
 
 from django.conf import settings
@@ -8,6 +10,7 @@ from users.models import User
 
 
 def send_confirmation_code_to_email(username):
+    """Отправка письма для завершения регистрации."""
     user = get_object_or_404(User, username=username)
     confirmation_code = int(
         ''.join([str(random.randrange(0, 10))

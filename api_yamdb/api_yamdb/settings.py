@@ -1,3 +1,5 @@
+"""Модуль настроек проекта."""
+
 import os
 from datetime import timedelta
 from pathlib import Path
@@ -25,7 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'reviews',
     'rest_framework',
-    'django_filters', 
+    'django_filters',
     'rest_framework_simplejwt',
     'api',
     'users',

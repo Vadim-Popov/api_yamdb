@@ -1,3 +1,5 @@
+"""Модуль содержит модели пользователя."""
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -6,7 +8,8 @@ from api_yamdb.settings import CONFIRMATION_CODE_LENGTH
 
 
 class CustomUser(AbstractUser):
-    """Модель пользователя"""
+    """Модель пользователя."""
+
     USER = 'user'
     MODERATOR = 'moderator'
     ADMIN = 'admin'
@@ -45,6 +48,8 @@ class CustomUser(AbstractUser):
     )
 
     class Meta:
+        """Мета класс."""
+
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         ordering = ('-id',)
@@ -56,18 +61,22 @@ class CustomUser(AbstractUser):
         )
 
     def __str__(self):
+        """Возвращает имя пользователя."""
         return self.username
 
     @property
     def is_user(self):
+        """Возвращает True, если user обычный пользователь."""
         return self.role == self.USER
 
     @property
     def is_moderator(self):
+        """Возвращает True, если пользователь модератор."""
         return self.role == self.MODERATOR
 
     @property
     def is_admin(self):
+        """Возвращает True, если пользователь админ."""
         return self.role == self.ADMIN
 
 

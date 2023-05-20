@@ -1,6 +1,10 @@
+"""Модуль маршрутов приложения."""
+
 from rest_framework.routers import DefaultRouter
 from django.urls import include, path
-from api.views import signup, get_token, UsersViewSet, CategoryViewSet, GenreViewSet, TitleViewSet, ReviewViewSet, CommentsViewSet
+from api.views import (signup, get_token, UsersViewSet, CategoryViewSet,
+                       GenreViewSet, TitleViewSet, ReviewViewSet,
+                       CommentsViewSet)
 
 
 router_v1 = DefaultRouter()

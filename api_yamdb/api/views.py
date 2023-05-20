@@ -1,26 +1,29 @@
+"""Модуль контроллеров приложения."""
+
 from django.conf import settings
-from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
 
 
 from api.permissions import (IsAdminModeratorAuthorOrReadOnly, IsAdminOrStaff,
                              IsAdminUserOrReadOnly)
-from api.serializers import (AuthTokenSerializer, SignUpSerializer,
-                             UserSerializer, CategorySerializer, GenreSerializer, TitleSerializer, TitleGetSerializer)
+from api.serializers import (AuthTokenSerializer, CategorySerializer,
+                             GenreSerializer, SignUpSerializer,
+                             UserSerializer, TitleSerializer,
+                             TitleGetSerializer)
 from api.utils import send_confirmation_code_to_email
 from reviews.models import Category, Genre, Title
 from users.models import User
 from users.token import get_tokens_for_user
 
 from .serializers import (CommentsSerializer,
-                          ReviewSerializer,
-                          )
+                          ReviewSerializer)
 
 from reviews.models import Review
 from .filters import TitleFilter
@@ -29,6 +32,7 @@ from .filters import TitleFilter
 @api_view(('POST',))
 @permission_classes((AllowAny,))
 def signup(request):
+    """Регистрация нового пользователя."""
     username = request.data.get('username')
     if User.objects.filter(username=username).exists():
         user = get_object_or_404(User, username=username)
@@ -62,6 +66,7 @@ def signup(request):
 @api_view(('POST',))
 @permission_classes((AllowAny,))
 def get_token(request):
+    """Получение токена при авторизации."""
     serializer = AuthTokenSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     user = get_object_or_404(User, username=request.data['username'])
@@ -72,6 +77,8 @@ def get_token(request):
 
 
 class UsersViewSet(viewsets.ModelViewSet):
+    """ViewSet для пользователей."""
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = (IsAdminOrStaff,)
@@ -86,6 +93,7 @@ class UsersViewSet(viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def me(self, request):
+        """Получение, изменение и сохранение данных пользователя."""
         if request.method == 'PATCH':
             serializer = UserSerializer(
                 request.user, data=request.data, partial=True
@@ -95,12 +103,14 @@ class UsersViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
 
 class CategoryViewSet(mixins.CreateModelMixin,
                       mixins.ListModelMixin,
                       mixins.DestroyModelMixin,
                       viewsets.GenericViewSet):
+    """ViewSet для категорий."""
+
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsAdminUserOrReadOnly]
@@ -114,6 +124,8 @@ class GenreViewSet(mixins.CreateModelMixin,
                    mixins.ListModelMixin,
                    mixins.DestroyModelMixin,
                    viewsets.GenericViewSet):
+    """ViewSet для жанров."""
+
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
     permission_classes = [IsAdminUserOrReadOnly]
@@ -124,7 +136,8 @@ class GenreViewSet(mixins.CreateModelMixin,
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    """ViewSet для модели Review"""
+    """ViewSet для модели Review."""
+
     serializer_class = ReviewSerializer
     permission_classes = (
         IsAuthenticatedOrReadOnly,
@@ -132,15 +145,18 @@ class ReviewViewSet(viewsets.ModelViewSet):
     )
 
     def title_get_or_404(self):
+        """Получение объекта Title или 404."""
         return get_object_or_404(
             Title,
             id=self.kwargs.get('title_id'))
 
     def get_queryset(self):
+        """Получение queryset объектов Review или 404."""
         title = self.title_get_or_404()
         return title.reviews.all()
 
     def perform_create(self, serializer):
+        """Сохраняет новый объект Review."""
         title = self.title_get_or_404()
         serializer.is_valid(raise_exception=True)
         serializer.save(author=self.request.user, title=title)
@@ -148,12 +164,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
 
 class CommentsViewSet(viewsets.ModelViewSet):
-    """ViewSet для модели Comments"""
+    """ViewSet для модели Comments."""
+
     serializer_class = CommentsSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,
                           IsAdminModeratorAuthorOrReadOnly,)
 
     def review_get_or_404(self):
+        """Получение объекта Review или 404."""
         return get_object_or_404(
             Review,
             id=self.kwargs.get('review_id'),
@@ -161,21 +179,26 @@ class CommentsViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
+        """Сохраняет новый объект Comment."""
         review = self.review_get_or_404()
         serializer.save(author=self.request.user, review=review)
 
     def get_queryset(self):
+        """Получение объекта Comment или 404."""
         review = self.review_get_or_404()
         return review.comments.all()
-    
+
 
 class TitleViewSet(viewsets.ModelViewSet):
+    """ViewSet для модели Title."""
+
     queryset = Title.objects.all()
     permission_classes = [IsAdminUserOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
 
     def get_serializer_class(self):
+        """Возвращает сериализатор под текущий метода запроса."""
         if self.request.method in ['POST', 'PATCH']:
             return TitleSerializer
         return TitleGetSerializer
