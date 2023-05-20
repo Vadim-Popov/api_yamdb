@@ -18,13 +18,13 @@
 - Python 3.9.10
 - Django 3.2
 - Djangorestframework 3.12.4
-
+- Simple JWT
 ## Запуск проекта в dev-режиме
 
 1. Клонировать репозиторий и перейти в него в командной строке:
 
     ```bash
-        git clone <ссылка с git-hub>
+        git clone https://github.com/Vadim-Popov/api_yamdb/
     ```
 
 2. Cоздать виртуальное окружение:
@@ -83,6 +83,34 @@
     http://127.0.0.1/redoc/
 ```
 
+### Регистрация нового пользователя
+Регистрация нового пользователя:
+Права доступа: Доступно без токена.
+```
+POST /api/v1/auth/signup/
+```
+
+```json
+{
+  "email": "string",
+  "username": "string"
+}
+
+```
+
+Получение JWT-токена:
+
+```
+POST /api/v1/auth/token/
+```
+
+```json
+{
+  "username": "string",
+  "confirmation_code": "string"
+}
+```
+
 ## Примеры запросов
 
 - GET-Response: <http://127.0.0.1:8000/api/v1/titles/1/>
@@ -127,12 +155,215 @@ Request:
     "pub_date": "2023-05-05T18:06:02.054698Z"
 }
 ```
+Добавление категории:
+
+```
+Права доступа: Администратор.
+POST /api/v1/categories/
+```
+
+```json
+{
+  "name": "string",
+  "slug": "string"
+}
+```
+
+Удаление категории:
+
+```
+Права доступа: Администратор.
+DELETE /api/v1/categories/{slug}/
+```
+
+Добавление жанра:
+
+```
+Права доступа: Администратор.
+POST /api/v1/genres/
+```
+
+```json
+{
+  "name": "string",
+  "slug": "string"
+}
+```
+
+Удаление жанра:
+
+```
+Права доступа: Администратор.
+DELETE /api/v1/genres/{slug}/
+```
+
+Обновление публикации:
+
+```
+PUT /api/v1/posts/{id}/
+```
+
+```json
+{
+"text": "string",
+"image": "string",
+"group": 0
+}
+```
+
+Добавление произведения:
+
+```
+Права доступа: Администратор. 
+Нельзя добавлять произведения, которые еще не вышли (год выпуска не может быть больше текущего).
+
+POST /api/v1/titles/
+```
+
+```json
+{
+  "name": "string",
+  "year": 0,
+  "description": "string",
+  "genre": [
+    "string"
+  ],
+  "category": "string"
+}
+```
+
+Добавление произведения:
+
+```
+Права доступа: Доступно без токена
+GET /api/v1/titles/{titles_id}/
+```
+
+```json
+{
+  "id": 0,
+  "name": "string",
+  "year": 0,
+  "rating": 0,
+  "description": "string",
+  "genre": [
+    {
+      "name": "string",
+      "slug": "string"
+    }
+  ],
+  "category": {
+    "name": "string",
+    "slug": "string"
+  }
+}
+```
+
+Частичное обновление информации о произведении:
+
+```
+Права доступа: Администратор
+PATCH /api/v1/titles/{titles_id}/
+```
+
+```json
+{
+  "name": "string",
+  "year": 0,
+  "description": "string",
+  "genre": [
+    "string"
+  ],
+  "category": "string"
+}
+```
+
+Частичное обновление информации о произведении:
+```
+Права доступа: Администратор
+DEL /api/v1/titles/{titles_id}/
+```
+
+### Работа с пользователями:
+
+Для работы с пользователя есть ограничения для работы с ними.
+Получение списка всех пользователей.
+
+```
+Права доступа: Администратор
+GET /api/v1/users/ - Получение списка всех пользователей
+```
+
+Добавление пользователя:
+
+```
+Права доступа: Администратор
+Поля email и username должны быть уникальными.
+POST /api/v1/users/ - Добавление пользователя
+```
+
+```json
+{
+"username": "string",
+"email": "user@example.com",
+"first_name": "string",
+"last_name": "string",
+"bio": "string",
+"role": "user"
+}
+```
+
+Получение пользователя по username:
+
+```
+Права доступа: Администратор
+GET /api/v1/users/{username}/ - Получение пользователя по username
+```
+
+Изменение данных пользователя по username:
+
+```
+Права доступа: Администратор
+PATCH /api/v1/users/{username}/ - Изменение данных пользователя по username
+```
+
+```json
+{
+  "username": "string",
+  "email": "user@example.com",
+  "first_name": "string",
+  "last_name": "string",
+  "bio": "string",
+  "role": "user"
+}
+```
+
+Удаление пользователя по username:
+
+```
+Права доступа: Администратор
+DELETE /api/v1/users/{username}/ - Удаление пользователя по username
+```
+
+Получение данных своей учетной записи:
+
+```
+Права доступа: Любой авторизованный пользователь
+GET /api/v1/users/me/ - Получение данных своей учетной записи
+```
+
+Изменение данных своей учетной записи:
+
+- Права доступа: Любой авторизованный пользователь
+```
+PATCH /api/v1/users/me/ # Изменение данных своей учетной записи
+```
 
 ## Авторы
 
 Студенты курса "Python-разработчик" от Яндекс-Практикума:
-Telegram:
 
-- Алексей: @lexa
-- Вадим: @vadim
-- Дмитрий: @dima
+
+- Алексей: (https://github.com/Salyuk163)
+- Вадим: (https://github.com/Vadim-Popov)
+- Дмитрий: (https://github.com/beliyd)
