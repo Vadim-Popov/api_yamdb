@@ -58,5 +58,5 @@ typing==3.7.4.3
 tzdata==2023.3
 tzlocal==4.3
 urllib3==1.25.11
-vboxapi==1.0
+# vboxapi==1.0
 wcwidth==0.2.5
