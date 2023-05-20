@@ -18,7 +18,7 @@
 - Python 3.9.10
 - Django 3.2
 - Djangorestframework 3.12.4
-
+- Simple JWT
 ## Запуск проекта в dev-режиме
 
 1. Клонировать репозиторий и перейти в него в командной строке:
@@ -154,6 +154,134 @@ Request:
     "score": 10,
     "pub_date": "2023-05-05T18:06:02.054698Z"
 }
+```
+Добавление категории:
+
+```
+Права доступа: Администратор.
+POST /api/v1/categories/
+```
+
+```json
+{
+  "name": "string",
+  "slug": "string"
+}
+```
+
+Удаление категории:
+
+```
+Права доступа: Администратор.
+DELETE /api/v1/categories/{slug}/
+```
+
+Добавление жанра:
+
+```
+Права доступа: Администратор.
+POST /api/v1/genres/
+```
+
+```json
+{
+  "name": "string",
+  "slug": "string"
+}
+```
+
+Удаление жанра:
+
+```
+Права доступа: Администратор.
+DELETE /api/v1/genres/{slug}/
+```
+
+Обновление публикации:
+
+```
+PUT /api/v1/posts/{id}/
+```
+
+```json
+{
+"text": "string",
+"image": "string",
+"group": 0
+}
+```
+
+Добавление произведения:
+
+```
+Права доступа: Администратор. 
+Нельзя добавлять произведения, которые еще не вышли (год выпуска не может быть больше текущего).
+
+POST /api/v1/titles/
+```
+
+```json
+{
+  "name": "string",
+  "year": 0,
+  "description": "string",
+  "genre": [
+    "string"
+  ],
+  "category": "string"
+}
+```
+
+Добавление произведения:
+
+```
+Права доступа: Доступно без токена
+GET /api/v1/titles/{titles_id}/
+```
+
+```json
+{
+  "id": 0,
+  "name": "string",
+  "year": 0,
+  "rating": 0,
+  "description": "string",
+  "genre": [
+    {
+      "name": "string",
+      "slug": "string"
+    }
+  ],
+  "category": {
+    "name": "string",
+    "slug": "string"
+  }
+}
+```
+
+Частичное обновление информации о произведении:
+
+```
+Права доступа: Администратор
+PATCH /api/v1/titles/{titles_id}/
+```
+
+```json
+{
+  "name": "string",
+  "year": 0,
+  "description": "string",
+  "genre": [
+    "string"
+  ],
+  "category": "string"
+}
+```
+
+Частичное обновление информации о произведении:
+```
+Права доступа: Администратор
+DEL /api/v1/titles/{titles_id}/
 ```
 
 ### Работа с пользователями:
