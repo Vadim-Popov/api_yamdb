@@ -3,14 +3,15 @@
 from django.conf import settings
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from reviews.models import Review
-from reviews.models import Comments
-
-
 from rest_framework import serializers
+from reviews.models import Category
+from reviews.models import Comments
+from reviews.models import Genre
+from reviews.models import Review
+from reviews.models import Title
 from api.permissions import IsAdminOrStaff
 from users.models import User
-from reviews.models import Category, Genre, Title
+
 
 USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутствие спецсимволов
 
@@ -77,10 +78,7 @@ class GenreSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов на произведения."""
 
-    title = serializers.SlugRelatedField(
-        slug_field='name',
-        read_only=True,
-    )
+
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -112,6 +110,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
         fields = '__all__'
         model = Review
+        read_only_fields = ['title']
 
 
 class CommentsSerializer(serializers.ModelSerializer):
@@ -122,17 +121,13 @@ class CommentsSerializer(serializers.ModelSerializer):
         slug_field='username',
         default=serializers.CurrentUserDefault(),
     )
-    review = serializers.SlugRelatedField(
-        slug_field='text',
-        read_only=True,
-    )
 
     class Meta:
         """Мета класс."""
 
         model = Comments
         fields = '__all__'
-        read_only_fields = ('pub_date',)
+        read_only_fields = ('pub_date', 'review')
 
 
 class TitleSerializer(serializers.ModelSerializer):

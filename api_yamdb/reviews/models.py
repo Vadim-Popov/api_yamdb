@@ -27,70 +27,64 @@ class Title(models.Model):
         return self.name
 
 
-class Review(models.Model):
-    """Модель отзывы на произведения."""
+class BaseReview(models.Model):
+    """Абстрактный базовый класс для отзывов и комментариев."""
 
     author = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='reviews',
-        verbose_name='Автор отзыва',
-        help_text='Пользователь, который оставил отзыв',
+        related_name='%(class)ss',
+        verbose_name='Автор',
+        help_text='Пользователь, который оставил отзыв/комментарий',
     )
+    text = models.TextField(
+        verbose_name='Текст',
+        help_text='Текст отзыва/комментария',
+    )
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации',
+        help_text='Дата публикации, проставляется автоматически',
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Review(BaseReview):
+    """Модель отзыва на произведение."""
+
     title = models.ForeignKey(
-        Title,
+        'Title',
         on_delete=models.CASCADE,
         related_name='reviews',
         verbose_name='Произведение',
         help_text='Выберите произведение, к которому хотите оставить отзыв',
     )
-    text = models.TextField(
-        verbose_name='Текст отзыва',
-    )
     score = models.IntegerField(
         validators=(
-            MinValueValidator(settings.MIN_SCORE_VALUE,
-                              message='Оценка меньше допустимой',),
-            MaxValueValidator(settings.MAX_SCORE_VALUE,
-                              message='Оценка больше допустимой',),
+            MinValueValidator(settings.MIN_SCORE_VALUE, message='Оценка меньше допустимой'),
+            MaxValueValidator(settings.MAX_SCORE_VALUE, message='Оценка больше допустимой'),
         ),
         verbose_name='Оценка произведения',
         help_text='Укажите оценку произведения',
     )
-    pub_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата публикации',
-        help_text='Дата публикации отзыва, проставляется автоматически.',
-    )
 
     class Meta:
-        """Мета класс."""
-
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         ordering = ('-pub_date',)
-        constraints = (
-            models.UniqueConstraint(
-                fields=('author', 'title'),
-                name='unique_review',
-            ),
-        )
+        constraints = [
+            models.UniqueConstraint(fields=['author', 'title'], name='unique_review'),
+        ]
 
     def __str__(self) -> str:
-        """Метод возвращает 15 символов отзыва."""
         return self.text[:15]
 
 
-class Comments(models.Model):
+class Comments(BaseReview):
     """Модель комментария."""
 
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='comments',
-        verbose_name='Автор комментария',
-        help_text='Пользователь, который оставил комментарий',
-    )
     review = models.ForeignKey(
         Review,
         on_delete=models.CASCADE,
@@ -98,25 +92,13 @@ class Comments(models.Model):
         verbose_name='Отзыв',
         help_text='Отзыв, к которому оставляют комментарий',
     )
-    text = models.TextField(
-        verbose_name='Текст комментария',
-        help_text='Текст комментария, который пишет пользователь',
-    )
-    pub_date = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата публикации комментария',
-        help_text='Дата публикации проставляется автоматически',
-    )
 
     class Meta:
-        """Мета класс."""
-
-        ordering = ('pub_date',)
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
+        ordering = ('pub_date',)
 
     def __str__(self) -> str:
-        """Метод возвращает 15 символов комментария."""
         return self.text[:15]
 
 
