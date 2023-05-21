@@ -371,4 +371,4 @@ PATCH /api/v1/users/me/ # Изменение данных своей учетн�
 
 - Алексей: (https://github.com/Salyuk163)
 - Вадим: (https://github.com/Vadim-Popov)
-- Дмитрий: (https://github.com/beliyd)
+- Дмитрий: (https://github.com/dmitromelnikoff)
