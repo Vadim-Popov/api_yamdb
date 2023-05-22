@@ -60,8 +60,13 @@
     ```bash
         pip install -r requirements.txt
     ```
+5. Выполнить миграции
 
-5. В папке с файлом manage.py выполните команду:
+    ```bash
+        python api_yamdb/manage.py migrate
+    ```
+
+6. В папке с файлом manage.py выполните команду:
 
     windows
 

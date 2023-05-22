@@ -15,6 +15,17 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# Constants used in the project
+
+LEN_USERNAME = 150
+LEN_CONFIRMATION_CODE = 16
+MIN_YEAR = 1900
+LEN_NAME = 256
+LEN_TEXT = 15
+LEN_SLUG = 50
+
+
+
 
 # Application definition
 
