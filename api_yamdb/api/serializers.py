@@ -3,7 +3,6 @@ from datetime import datetime
 
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
@@ -138,15 +137,9 @@ class TitleSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='slug',
         queryset=Genre.objects.all())
-    rating = serializers.SerializerMethodField()
     year = serializers.IntegerField(
         validators=[MinValueValidator(MIN_YEAR),
-                    MaxValueValidator(datetime.now().year)]
-    )
-
-    def get_rating(self, obj):
-        """Вычисление среднего значения оценок для произведения."""
-        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
+                    MaxValueValidator(datetime.now().year)])
 
     class Meta:
         """Мета класс."""
@@ -160,14 +153,10 @@ class TitleGetSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField()
 
     class Meta:
         """Мета класс."""
 
         model = Title
         fields = '__all__'
-
-    def get_rating(self, obj):
-        """Вычисление среднего значения оценок для произведения."""
-        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')

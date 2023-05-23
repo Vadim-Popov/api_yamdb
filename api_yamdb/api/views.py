@@ -2,6 +2,7 @@
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
+from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
@@ -176,13 +177,20 @@ class CommentsViewSet(viewsets.ModelViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для модели Title."""
 
-    queryset = Title.objects.all()
     permission_classes = [IsAdminUserOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
+    serializer_class = TitleGetSerializer
 
     def get_serializer_class(self):
-        """Возвращает сериализатор под текущий метода запроса."""
+        """Возвращает сериализатор под текущий метод запроса."""
         if self.request.method in ['POST', 'PATCH']:
             return TitleSerializer
-        return TitleGetSerializer
+        return self.serializer_class
+
+    def get_queryset(self):
+        """Возвращает queryset с добавлением поля rating"""
+        queryset = Title.objects.all()
+        if self.action in ['list', 'retrieve']:
+            queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+        return queryset
