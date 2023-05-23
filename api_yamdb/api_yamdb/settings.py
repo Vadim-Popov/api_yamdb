@@ -24,9 +24,6 @@ LEN_NAME = 256
 LEN_TEXT = 15
 LEN_SLUG = 50
 
-
-
-
 # Application definition
 
 INSTALLED_APPS = [

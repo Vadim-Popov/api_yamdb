@@ -133,6 +133,8 @@ class Category(models.Model):
         """Мета класс."""
 
         ordering = ['name']
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
     def __str__(self):
         """Метод возвращает слаг объекта."""
@@ -149,6 +151,8 @@ class Genre(models.Model):
         """Мета класс."""
 
         ordering = ['name']
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
 
     def __str__(self):
         """Метод возвращает слаг объекта."""
@@ -160,6 +164,11 @@ class GenreTitle(models.Model):
 
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
+
+    class Meta:
+        """Мета класс."""
+
+        verbose_name = 'Жанр-Произведение'
 
     def __str__(self):
         """Возвращает принадлежность произведения к жанру."""
