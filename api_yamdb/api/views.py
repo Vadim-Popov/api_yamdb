@@ -17,7 +17,7 @@ from users.models import User
 from .filters import TitleFilter
 from .mixins import CategoryGenreViewSet
 from .permissions import (IsAdminModeratorAuthorOrReadOnly, IsAdminOrStaff,
-                             IsAdminUserOrReadOnly)
+                          IsAdminUserOrReadOnly)
 from .serializers import (CategorySerializer, CommentsSerializer,
                           GenreSerializer, GetTokenSerializer,
                           ReviewSerializer, TitleSerializer,
@@ -44,6 +44,7 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated, ]
     )
     def me(self, request):
+        """Отображает/обновляет данные текущего пользователя."""
         if request.method == 'GET':
             serializer = UserSerializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -58,9 +59,12 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class SignupView(APIView):
+    """Контроллер для регистрации пользователей."""
+
     permission_classes = (AllowAny,)
 
     def post(self, request):
+        """Создает нового/обновляет пользователя."""
         username = request.data.get('username')
         if User.objects.filter(username=username).exists():
             user = get_object_or_404(User, username=username)
@@ -100,10 +104,13 @@ class SignupView(APIView):
 
 
 class GetTokenView(TokenObtainPairView):
+    """Контроллер для получения токенов."""
+
     serializer_class = GetTokenSerializer
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Получает токен для указанного пользователя."""
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data['username']
@@ -202,7 +209,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         return self.serializer_class
 
     def get_queryset(self):
-        """Возвращает queryset с добавлением поля rating"""
+        """Возвращает queryset с добавлением поля rating."""
         queryset = Title.objects.all()
         if self.action in ['list', 'retrieve']:
             queryset = Title.objects.annotate(rating=Avg('reviews__score'))
