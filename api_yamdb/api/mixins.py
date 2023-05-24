@@ -3,7 +3,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, viewsets
 
-from api.permissions import IsAdminUserOrReadOnly
+from .permissions import IsAdminUserOrReadOnly
 
 
 class CategoryGenreViewSet(mixins.CreateModelMixin, mixins.ListModelMixin,

@@ -1,49 +1,29 @@
 """Модуль контроллеров приложения."""
 
-from django.shortcuts import get_object_or_404
 from django.db.models import Avg
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-
-
-from api.permissions import (IsAdminModeratorAuthorOrReadOnly,
-                             IsAdminUserOrReadOnly)
-from api.serializers import (CategorySerializer,
-                             GenreSerializer,
-                             UserSerializer, TitleSerializer,
-                             TitleGetSerializer)
-from api.utils import send_confirmation_code_to_email
-from .mixins import CategoryGenreViewSet
-from reviews.models import Category, Genre, Title
-from users.models import User
-
-from .serializers import (CommentsSerializer,
-                          ReviewSerializer)
-
-from reviews.models import Review
-from .filters import TitleFilter
-from api.permissions import IsAdminOrStaff
-from api.utils import send_confirmation_code_to_email
-from django.shortcuts import get_object_or_404
-from rest_framework import filters, viewsets, status
-from rest_framework.decorators import action
-from rest_framework.permissions import (AllowAny, IsAuthenticated, )
-from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from users.models import User
 
-from .serializers import (
-    UserSerializer,
-    GetTokenSerializer,
-    UsersMeSerializer,
-    SignupSerializer,
-)
+from reviews.models import Category, Genre, Review, Title
+from users.models import User
+from .filters import TitleFilter
+from .mixins import CategoryGenreViewSet
+from .permissions import (IsAdminModeratorAuthorOrReadOnly, IsAdminOrStaff,
+                             IsAdminUserOrReadOnly)
+from .serializers import (CategorySerializer, CommentsSerializer,
+                          GenreSerializer, GetTokenSerializer,
+                          ReviewSerializer, TitleSerializer,
+                          TitleGetSerializer, SignupSerializer,
+                          UserSerializer, UsersMeSerializer)
+from .utils import send_confirmation_code_to_email
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -64,7 +44,6 @@ class UserViewSet(viewsets.ModelViewSet):
         permission_classes=[IsAuthenticated, ]
     )
     def me(self, request):
-        """Обновляет данные текущего пользователя."""
         if request.method == 'GET':
             serializer = UserSerializer(request.user)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -79,12 +58,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class SignupView(APIView):
-    """Контроллер для регистрации пользователей."""
-
     permission_classes = (AllowAny,)
 
     def post(self, request):
-        """Создает нового/обновляет пользователя."""
         username = request.data.get('username')
         if User.objects.filter(username=username).exists():
             user = get_object_or_404(User, username=username)
@@ -124,13 +100,10 @@ class SignupView(APIView):
 
 
 class GetTokenView(TokenObtainPairView):
-    """Контроллер для получения токена."""
-
     serializer_class = GetTokenSerializer
     permission_classes = [AllowAny]
 
     def post(self, request):
-        """Получает и передает токен для указанного пользователя."""
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         username = serializer.validated_data['username']
@@ -229,7 +202,7 @@ class TitleViewSet(viewsets.ModelViewSet):
         return self.serializer_class
 
     def get_queryset(self):
-        """Возвращает queryset с добавлением поля rating."""
+        """Возвращает queryset с добавлением поля rating"""
         queryset = Title.objects.all()
         if self.action in ['list', 'retrieve']:
             queryset = Title.objects.annotate(rating=Avg('reviews__score'))

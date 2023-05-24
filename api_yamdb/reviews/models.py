@@ -1,8 +1,8 @@
 """Модуль с моделями приложения."""
 
 from django.conf import settings
-from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 
 class Title(models.Model):

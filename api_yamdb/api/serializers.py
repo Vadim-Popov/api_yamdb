@@ -8,8 +8,8 @@ from django.core.validators import (MaxValueValidator,
 from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers, status
-from rest_framework.validators import UniqueValidator
 from rest_framework.response import Response
+from rest_framework.validators import UniqueValidator
 
 from reviews.models import Category, Comments, Genre, Review, Title
 from users.models import User

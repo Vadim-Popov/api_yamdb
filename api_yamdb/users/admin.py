@@ -1,6 +1,7 @@
 """Модуль содержит настройки админки для приложения Users."""
 
 from django.contrib import admin
+
 from .models import User
 
 
