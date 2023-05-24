@@ -1,13 +1,13 @@
 """Модуль контроллеров приложения."""
 
 from django.shortcuts import get_object_or_404
+from django.db.models import Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, mixins, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import (AllowAny, IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
-from rest_framework.filters import SearchFilter
 
 
 from api.permissions import (IsAdminModeratorAuthorOrReadOnly,
@@ -17,9 +17,9 @@ from api.serializers import (CategorySerializer,
                              UserSerializer, TitleSerializer,
                              TitleGetSerializer)
 from api.utils import send_confirmation_code_to_email
+from .mixins import CategoryGenreViewSet
 from reviews.models import Category, Genre, Title
 from users.models import User
-# from users.token import get_tokens_for_user
 
 from .serializers import (CommentsSerializer,
                           ReviewSerializer)
@@ -139,34 +139,18 @@ class GetTokenView(TokenObtainPairView):
         return Response(str(token), status=status.HTTP_200_OK)
 
 
-class CategoryViewSet(mixins.CreateModelMixin,
-                      mixins.ListModelMixin,
-                      mixins.DestroyModelMixin,
-                      viewsets.GenericViewSet):
+class CategoryViewSet(CategoryGenreViewSet):
     """ViewSet для категорий."""
 
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAdminUserOrReadOnly]
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['name', 'slug']
-    search_fields = ['name', 'slug']
-    lookup_field = 'slug'
 
 
-class GenreViewSet(mixins.CreateModelMixin,
-                   mixins.ListModelMixin,
-                   mixins.DestroyModelMixin,
-                   viewsets.GenericViewSet):
+class GenreViewSet(CategoryGenreViewSet):
     """ViewSet для жанров."""
 
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
-    permission_classes = [IsAdminUserOrReadOnly]
-    filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ['name', 'slug']
-    search_fields = ['name', 'slug']
-    lookup_field = 'slug'
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -226,13 +210,20 @@ class CommentsViewSet(viewsets.ModelViewSet):
 class TitleViewSet(viewsets.ModelViewSet):
     """ViewSet для модели Title."""
 
-    queryset = Title.objects.all()
     permission_classes = [IsAdminUserOrReadOnly]
     filter_backends = [DjangoFilterBackend]
     filterset_class = TitleFilter
+    serializer_class = TitleGetSerializer
 
     def get_serializer_class(self):
-        """Возвращает сериализатор под текущий метода запроса."""
+        """Возвращает сериализатор под текущий метод запроса."""
         if self.request.method in ['POST', 'PATCH']:
             return TitleSerializer
-        return TitleGetSerializer
+        return self.serializer_class
+
+    def get_queryset(self):
+        """Возвращает queryset с добавлением поля rating"""
+        queryset = Title.objects.all()
+        if self.action in ['list', 'retrieve']:
+            queryset = Title.objects.annotate(rating=Avg('reviews__score'))
+        return queryset

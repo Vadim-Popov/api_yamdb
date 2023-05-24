@@ -1,16 +1,19 @@
 """Модуль сериалайзеров."""
+from datetime import datetime
 
 from django.conf import settings
-from django.db.models import Avg
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.shortcuts import get_object_or_404
-from django.core.validators import RegexValidator
 
 from rest_framework import serializers, status
-from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
+from rest_framework.response import Response
 
-from users.models import User
+from api.permissions import IsAdminOrStaff
+from api_yamdb.settings import LEN_USERNAME, LEN_CONFIRMATION_CODE, MIN_YEAR
 from reviews.models import Category, Comments, Genre, Review, Title
+from users.models import User
+
 
 USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутствие спецсимволов
 
@@ -44,8 +47,7 @@ class UsersMeSerializer(UserSerializer):
 class GetTokenSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=settings.LENGTH_USERNAME)
     confirmation_code = serializers.CharField(
-        max_length=settings.CONFIRMATION_CODE_LENGTH
-    )
+        max_length=settings.CONFIRMATION_CODE_LENGTH)
 
     def validate(self, data):
         username = data.get('username')
@@ -112,10 +114,6 @@ class GenreSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов на произведения."""
 
-    title = serializers.SlugRelatedField(
-        slug_field='name',
-        read_only=True,
-    )
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -146,7 +144,9 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Мета класс."""
 
         fields = '__all__'
+        read_only_fields = ['title']
         model = Review
+        read_only_fields = ['title']
 
 
 class CommentsSerializer(serializers.ModelSerializer):
@@ -157,17 +157,13 @@ class CommentsSerializer(serializers.ModelSerializer):
         slug_field='username',
         default=serializers.CurrentUserDefault(),
     )
-    review = serializers.SlugRelatedField(
-        slug_field='text',
-        read_only=True,
-    )
 
     class Meta:
         """Мета класс."""
 
         model = Comments
         fields = '__all__'
-        read_only_fields = ('pub_date',)
+        read_only_fields = ('pub_date', 'review')
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -180,11 +176,9 @@ class TitleSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='slug',
         queryset=Genre.objects.all())
-    rating = serializers.SerializerMethodField()
-
-    def get_rating(self, obj):
-        """Вычисление среднего значения оценок для произведения."""
-        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
+    year = serializers.IntegerField(
+        validators=[MinValueValidator(MIN_YEAR),
+                    MaxValueValidator(datetime.now().year)])
 
     class Meta:
         """Мета класс."""
@@ -198,14 +192,10 @@ class TitleGetSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField()
 
     class Meta:
         """Мета класс."""
 
         model = Title
         fields = '__all__'
-
-    def get_rating(self, obj):
-        """Вычисление среднего значения оценок для произведения."""
-        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
