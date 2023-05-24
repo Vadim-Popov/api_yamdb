@@ -1,3 +1,5 @@
+"""Модуль с моделями приложения."""
+
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -11,6 +13,8 @@ USER_TYPE_CHOICES = (
 
 
 class User(AbstractUser):
+    """Расширенная модель пользователя."""
+
     bio = models.TextField(
         verbose_name='Биография',
         blank=True,
@@ -33,6 +37,8 @@ class User(AbstractUser):
     )
 
     class Meta:
+        """Мета класс."""
+
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
         ordering = ('username',)
@@ -40,6 +46,7 @@ class User(AbstractUser):
     # чтобы мы могли обращаться к методам, как к атрибутам
     @property
     def is_admin(self):
+        """Проверяет, является ли пользователь администратором.."""
         return (
             self.role == USER_TYPE_CHOICES[1][0]
             or (self.is_staff and self.is_superuser)
@@ -47,6 +54,7 @@ class User(AbstractUser):
 
     @property
     def is_moderator(self):
+        """Проверяет, является ли пользователь модератором."""
         return (
             self.role == USER_TYPE_CHOICES[2][0]
             or self.is_staff

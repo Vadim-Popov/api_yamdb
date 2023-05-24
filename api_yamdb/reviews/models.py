@@ -4,14 +4,12 @@ from django.conf import settings
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-from api_yamdb.settings import LEN_NAME, LEN_TEXT, LEN_SLUG
-from users.models import User
-
 
 class Title(models.Model):
     """Модель произведений."""
 
-    name = models.CharField('Название произведения', max_length=LEN_NAME)
+    name = models.CharField('Название произведения',
+                            max_length=settings.LEN_NAME)
     year = models.PositiveSmallIntegerField('Год произведения', db_index=True)
     category = models.ForeignKey('Category', on_delete=models.SET_NULL,
                                  null=True, blank=True, related_name='titles')
@@ -51,6 +49,8 @@ class BaseReview(models.Model):
     )
 
     class Meta:
+        """Мета класс."""
+
         abstract = True
 
 
@@ -66,24 +66,29 @@ class Review(BaseReview):
     )
     score = models.IntegerField(
         validators=(
-            MinValueValidator(settings.MIN_SCORE_VALUE, message='Оценка меньше допустимой'),
-            MaxValueValidator(settings.MAX_SCORE_VALUE, message='Оценка больше допустимой'),
+            MinValueValidator(settings.MIN_SCORE_VALUE,
+                              message='Оценка меньше допустимой'),
+            MaxValueValidator(settings.MAX_SCORE_VALUE,
+                              message='Оценка больше допустимой'),
         ),
         verbose_name='Оценка произведения',
         help_text='Укажите оценку произведения',
     )
 
     class Meta:
+        """Мета класс."""
+
         verbose_name = 'Отзыв'
         verbose_name_plural = 'Отзывы'
         ordering = ('-pub_date',)
         constraints = [
-            models.UniqueConstraint(fields=['author', 'title'], name='unique_review'),
+            models.UniqueConstraint(fields=['author', 'title'],
+                                    name='unique_review'),
         ]
 
     def __str__(self) -> str:
         """Метод возвращает 15 символов отзыва."""
-        return self.text[:LEN_TEXT]
+        return self.text[:settings.LEN_TEXT]
 
 
 class Comments(BaseReview):
@@ -98,20 +103,24 @@ class Comments(BaseReview):
     )
 
     class Meta:
+        """Мета класс."""
+
         verbose_name = 'Комментарий'
         verbose_name_plural = 'Комментарии'
         ordering = ('pub_date',)
 
     def __str__(self) -> str:
         """Метод возвращает 15 символов комментария."""
-        return self.text[:LEN_TEXT]
+        return self.text[:settings.LEN_TEXT]
 
-      
+
 class Category(models.Model):
     """Модель категорий."""
 
-    name = models.CharField('Название категории', max_length=LEN_NAME)
-    slug = models.SlugField('Слаг категории', max_length=LEN_SLUG, unique=True)
+    name = models.CharField('Название категории',
+                            max_length=settings.LEN_NAME)
+    slug = models.SlugField('Слаг категории',
+                            max_length=settings.LEN_SLUG, unique=True)
 
     class Meta:
         """Мета класс."""
@@ -128,8 +137,8 @@ class Category(models.Model):
 class Genre(models.Model):
     """Модель жанра."""
 
-    name = models.CharField('Жанр', max_length=LEN_NAME)
-    slug = models.SlugField('Слаг', max_length=LEN_SLUG, unique=True)
+    name = models.CharField('Жанр', max_length=settings.LEN_NAME)
+    slug = models.SlugField('Слаг', max_length=settings.LEN_SLUG, unique=True)
 
     class Meta:
         """Мета класс."""

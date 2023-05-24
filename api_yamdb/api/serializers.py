@@ -2,15 +2,15 @@
 from datetime import datetime
 
 from django.conf import settings
-from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
+from django.core.validators import (MaxValueValidator,
+                                    MinValueValidator,
+                                    RegexValidator)
 from django.shortcuts import get_object_or_404
 
 from rest_framework import serializers, status
 from rest_framework.validators import UniqueValidator
 from rest_framework.response import Response
 
-from api.permissions import IsAdminOrStaff
-from api_yamdb.settings import LEN_USERNAME, LEN_CONFIRMATION_CODE, MIN_YEAR
 from reviews.models import Category, Comments, Genre, Review, Title
 from users.models import User
 
@@ -20,7 +20,7 @@ USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутс
 
 class UserSerializer(serializers.ModelSerializer):
     """Сериализатор для пользователей."""
-   
+
     username = serializers.CharField(
         max_length=settings.LENGTH_USERNAME,
         validators=[
@@ -34,6 +34,8 @@ class UserSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
+        """Мета класс."""
+
         fields = ('username', 'email',
                   'first_name', 'last_name',
                   'bio', 'role')
@@ -41,15 +43,20 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UsersMeSerializer(UserSerializer):
+    """Сериализатор для текущего пользователя."""
+
     role = serializers.CharField(read_only=True)
 
 
 class GetTokenSerializer(serializers.Serializer):
+    """Сериализатор для получения токена."""
+
     username = serializers.CharField(max_length=settings.LENGTH_USERNAME)
     confirmation_code = serializers.CharField(
         max_length=settings.CONFIRMATION_CODE_LENGTH)
 
     def validate(self, data):
+        """Проверяет корректность имени пользователя и кода доступа."""
         username = data.get('username')
         confirmation_code = data.get('confirmation_code')
 
@@ -80,10 +87,13 @@ class SignupSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=settings.LENGTH_EMAIL)
 
     class Meta:
+        """Мета класс."""
+
         fields = ('username', 'email')
         model = User
 
     def validate_username(self, value):
+        """Проверяет, что имя пользователя не равно "me"."""
         if value == 'me':
             raise serializers.ValidationError(
                 'me нельзя использовать в качестве имени',
@@ -146,7 +156,6 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['title']
         model = Review
-        read_only_fields = ['title']
 
 
 class CommentsSerializer(serializers.ModelSerializer):
@@ -177,7 +186,7 @@ class TitleSerializer(serializers.ModelSerializer):
         slug_field='slug',
         queryset=Genre.objects.all())
     year = serializers.IntegerField(
-        validators=[MinValueValidator(MIN_YEAR),
+        validators=[MinValueValidator(settings.MIN_YEAR),
                     MaxValueValidator(datetime.now().year)])
 
     class Meta:
