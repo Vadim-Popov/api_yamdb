@@ -19,7 +19,6 @@ from api.serializers import (CategorySerializer,
 from api.utils import send_confirmation_code_to_email
 from reviews.models import Category, Genre, Title
 from users.models import User
-# from users.token import get_tokens_for_user
 
 from .serializers import (CommentsSerializer,
                           ReviewSerializer)
