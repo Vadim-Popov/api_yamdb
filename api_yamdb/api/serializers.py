@@ -5,53 +5,89 @@ from django.db.models import Avg
 from django.shortcuts import get_object_or_404
 from reviews.models import Review
 from reviews.models import Comments
-
+from django.core.validators import RegexValidator
 
 from rest_framework import serializers
-from api.permissions import IsAdminOrStaff
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.validators import UniqueValidator
+# from api.permissions import IsAdminOrStaff
 from users.models import User
 from reviews.models import Category, Genre, Title
 
 USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутствие спецсимволов
 
 
-class SignUpSerializer(serializers.ModelSerializer):
-    """Сериализатор для регистрации пользователя."""
-
-    class Meta:
-        """Мета класс."""
-
-        model = User
-        fields = ('email', 'username')
-
-
-class AuthTokenSerializer(serializers.Serializer):
-    """Сериализатор для получения токена авторизации."""
-
-    username = serializers.RegexField(
-        regex=USERNAME_CHECK,
-        max_length=150,
-        required=True
-    )
-    confirmation_code = serializers.CharField(
-        required=True,
-        max_length=16,
-    )
-
-
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для пользователя с правами администратора или персонала."""
-
-    permission_classes = (IsAdminOrStaff,)
+    username = serializers.CharField(
+        max_length=settings.LENGTH_USERNAME,
+        validators=[
+            RegexValidator(
+                regex=USERNAME_CHECK,
+                message="""Имя должно содержать,только
+                буквы,
+                цифры или же символ подчеркивания!"""),
+            UniqueValidator(queryset=User.objects.all()),
+        ],
+    )
 
     class Meta:
-        """Мета класс."""
-
+        fields = ('username', 'email',
+                  'first_name', 'last_name',
+                  'bio', 'role')
         model = User
-        fields = (
-            'username', 'email', 'first_name',
-            'last_name', 'bio', 'role'
-        )
+
+
+class UsersMeSerializer(UserSerializer):
+    role = serializers.CharField(read_only=True)
+
+
+class GetTokenSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=settings.LENGTH_USERNAME)
+    confirmation_code = serializers.CharField(
+        max_length=settings.CONFIRMATION_CODE_LENGTH
+    )
+
+    def validate(self, data):
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
+
+        if not username:
+            raise serializers.ValidationError('Нет поля username')
+
+        try:
+            user = get_object_or_404(User, username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                'Пользователь с таким именем не найден')
+
+        if user.username != username:
+            return Response(
+                {'detail': 'Неверный код доступа'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user.confirmation_code != confirmation_code:
+            raise serializers.ValidationError('Неверный код доступа')
+
+        return data
+
+
+class SignupSerializer(serializers.ModelSerializer):
+    """Сериализатор для регистрации пользователей."""
+
+    email = serializers.EmailField(max_length=settings.LENGTH_EMAIL)
+
+    class Meta:
+        fields = ('username', 'email')
+        model = User
+
+    def validate_username(self, value):
+        if value == 'me':
+            raise serializers.ValidationError(
+                'me нельзя использовать в качестве имени',
+            )
+        return value
 
 
 class CategorySerializer(serializers.ModelSerializer):

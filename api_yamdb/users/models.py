@@ -1,83 +1,57 @@
-"""Модуль содержит модели пользователя."""
-
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-from api_yamdb.settings import CONFIRMATION_CODE_LENGTH
+
+USER_TYPE_CHOICES = (
+    ('user', 'user'),
+    ('admin', 'admin'),
+    ('moderator', 'moderator')
+)
 
 
-class CustomUser(AbstractUser):
-    """Модель пользователя."""
-
-    USER = 'user'
-    MODERATOR = 'moderator'
-    ADMIN = 'admin'
-
-    CHOICES = (
-        (USER, 'Аутентифицированный пользователь'),
-        (MODERATOR, 'Модератор'),
-        (ADMIN, 'Админ'),
+class User(AbstractUser):
+    bio = models.TextField(
+        verbose_name='Биография',
+        blank=True,
+    )
+    email = models.EmailField(
+        verbose_name='Почта',
+        max_length=settings.LENGTH_EMAIL,
+        unique=True,
     )
     role = models.CharField(
-        max_length=16,
-        choices=CHOICES,
-        default='user',
-        verbose_name='Уровень доступа пользователя',
-        help_text='Уровень доступа пользователя'
+        verbose_name='Роль',
+        max_length=max(len(choice[0]) for choice in USER_TYPE_CHOICES),
+        choices=USER_TYPE_CHOICES,
+        default=USER_TYPE_CHOICES[0][0]
     )
-
-    bio = models.TextField(
-        max_length=300,
-        blank=True,
-        verbose_name='Заметка о пользователе',
-        help_text='Напишите заметку о себе'
-    )
-
-    email = models.EmailField(
-        blank=False,
-        unique=True,
-        verbose_name='Электронная почта пользователя',
-        help_text='Введите свой электронный адрес'
-    )
-
     confirmation_code = models.CharField(
+        max_length=settings.CONFIRMATION_CODE_LENGTH,
         blank=True,
-        verbose_name='Код для авторизации',
-        max_length=CONFIRMATION_CODE_LENGTH,
+        verbose_name='Код доступа',
     )
 
     class Meta:
-        """Мета класс."""
-
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
-        ordering = ('-id',)
-        constraints = (
-            models.UniqueConstraint(
-                fields=('username', 'email'),
-                name='unique_username_email'
-            ),
-        )
 
-    def __str__(self):
-        """Возвращает имя пользователя."""
-        return self.username
-
+    # чтобы мы могли обращаться к методам, как к атрибутам
     @property
-    def is_user(self):
-        """Возвращает True, если user обычный пользователь."""
-        return self.role == self.USER
+    def is_admin(self):
+        return (
+            self.role == USER_TYPE_CHOICES[1][0]
+            or (self.is_staff and self.is_superuser)
+        )
 
     @property
     def is_moderator(self):
-        """Возвращает True, если пользователь модератор."""
-        return self.role == self.MODERATOR
-
-    @property
-    def is_admin(self):
-        """Возвращает True, если пользователь админ."""
-        return self.role == self.ADMIN
+        return (
+            self.role == USER_TYPE_CHOICES[2][0]
+            or self.is_staff
+            or self.is_admin
+        )
 
 
 User = get_user_model()
