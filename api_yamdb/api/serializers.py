@@ -3,22 +3,21 @@
 from django.conf import settings
 from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from reviews.models import Review
-from reviews.models import Comments
 from django.core.validators import RegexValidator
 
-from rest_framework import serializers
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
-# from api.permissions import IsAdminOrStaff
+
 from users.models import User
-from reviews.models import Category, Genre, Title
+from reviews.models import Category, Comments, Genre, Review, Title
 
 USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутствие спецсимволов
 
 
 class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор для пользователей."""
+   
     username = serializers.CharField(
         max_length=settings.LENGTH_USERNAME,
         validators=[

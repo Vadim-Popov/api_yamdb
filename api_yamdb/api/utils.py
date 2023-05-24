@@ -1,3 +1,4 @@
+"""Модуль утилит."""
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils.crypto import get_random_string
@@ -6,6 +7,7 @@ from users.models import User
 
 
 def send_confirmation_code_to_email(request):
+    """Отправка кода подтверждения на почту."""
     user = get_object_or_404(User, username=request.data.get('username'))
     confirmation_code = get_random_string(
         settings.CONFIRMATION_CODE_LENGTH,
