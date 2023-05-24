@@ -1,57 +1,104 @@
 """Модуль сериалайзеров."""
+from datetime import datetime
 
 from django.conf import settings
-from django.db.models import Avg
+from django.core.validators import (MaxValueValidator,
+                                    MinValueValidator,
+                                    RegexValidator)
 from django.shortcuts import get_object_or_404
-from reviews.models import Review
-from reviews.models import Comments
 
+from rest_framework import serializers, status
+from rest_framework.validators import UniqueValidator
+from rest_framework.response import Response
 
-from rest_framework import serializers
-from api.permissions import IsAdminOrStaff
+from reviews.models import Category, Comments, Genre, Review, Title
 from users.models import User
-from reviews.models import Category, Genre, Title
+
 
 USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутствие спецсимволов
 
 
-class SignUpSerializer(serializers.ModelSerializer):
-    """Сериализатор для регистрации пользователя."""
-
-    class Meta:
-        """Мета класс."""
-
-        model = User
-        fields = ('email', 'username')
-
-
-class AuthTokenSerializer(serializers.Serializer):
-    """Сериализатор для получения токена авторизации."""
-
-    username = serializers.RegexField(
-        regex=USERNAME_CHECK,
-        max_length=150,
-        required=True
-    )
-    confirmation_code = serializers.CharField(
-        required=True,
-        max_length=16,
-    )
-
-
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор для пользователя с правами администратора или персонала."""
+    """Сериализатор для пользователей."""
 
-    permission_classes = (IsAdminOrStaff,)
+    username = serializers.CharField(
+        max_length=settings.LENGTH_USERNAME,
+        validators=[
+            RegexValidator(
+                regex=USERNAME_CHECK,
+                message="""Имя должно содержать,только
+                буквы,
+                цифры или же символ подчеркивания!"""),
+            UniqueValidator(queryset=User.objects.all()),
+        ],
+    )
 
     class Meta:
         """Мета класс."""
 
+        fields = ('username', 'email',
+                  'first_name', 'last_name',
+                  'bio', 'role')
         model = User
-        fields = (
-            'username', 'email', 'first_name',
-            'last_name', 'bio', 'role'
-        )
+
+
+class UsersMeSerializer(UserSerializer):
+    """Сериализатор для текущего пользователя."""
+
+    role = serializers.CharField(read_only=True)
+
+
+class GetTokenSerializer(serializers.Serializer):
+    """Сериализатор для получения токена."""
+
+    username = serializers.CharField(max_length=settings.LENGTH_USERNAME)
+    confirmation_code = serializers.CharField(
+        max_length=settings.CONFIRMATION_CODE_LENGTH)
+
+    def validate(self, data):
+        """Проверяет корректность имени пользователя и кода доступа."""
+        username = data.get('username')
+        confirmation_code = data.get('confirmation_code')
+
+        if not username:
+            raise serializers.ValidationError('Нет поля username')
+
+        try:
+            user = get_object_or_404(User, username=username)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                'Пользователь с таким именем не найден')
+
+        if user.username != username:
+            return Response(
+                {'detail': 'Неверный код доступа'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if user.confirmation_code != confirmation_code:
+            raise serializers.ValidationError('Неверный код доступа')
+
+        return data
+
+
+class SignupSerializer(serializers.ModelSerializer):
+    """Сериализатор для регистрации пользователей."""
+
+    email = serializers.EmailField(max_length=settings.LENGTH_EMAIL)
+
+    class Meta:
+        """Мета класс."""
+
+        fields = ('username', 'email')
+        model = User
+
+    def validate_username(self, value):
+        """Проверяет, что имя пользователя не равно "me"."""
+        if value == 'me':
+            raise serializers.ValidationError(
+                'me нельзя использовать в качестве имени',
+            )
+        return value
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -77,10 +124,6 @@ class GenreSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов на произведения."""
 
-    title = serializers.SlugRelatedField(
-        slug_field='name',
-        read_only=True,
-    )
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -111,6 +154,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Мета класс."""
 
         fields = '__all__'
+        read_only_fields = ['title']
         model = Review
 
 
@@ -122,17 +166,13 @@ class CommentsSerializer(serializers.ModelSerializer):
         slug_field='username',
         default=serializers.CurrentUserDefault(),
     )
-    review = serializers.SlugRelatedField(
-        slug_field='text',
-        read_only=True,
-    )
 
     class Meta:
         """Мета класс."""
 
         model = Comments
         fields = '__all__'
-        read_only_fields = ('pub_date',)
+        read_only_fields = ('pub_date', 'review')
 
 
 class TitleSerializer(serializers.ModelSerializer):
@@ -145,11 +185,9 @@ class TitleSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='slug',
         queryset=Genre.objects.all())
-    rating = serializers.SerializerMethodField()
-
-    def get_rating(self, obj):
-        """Вычисление среднего значения оценок для произведения."""
-        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
+    year = serializers.IntegerField(
+        validators=[MinValueValidator(settings.MIN_YEAR),
+                    MaxValueValidator(datetime.now().year)])
 
     class Meta:
         """Мета класс."""
@@ -163,14 +201,10 @@ class TitleGetSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField()
 
     class Meta:
         """Мета класс."""
 
         model = Title
         fields = '__all__'
-
-    def get_rating(self, obj):
-        """Вычисление среднего значения оценок для произведения."""
-        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
