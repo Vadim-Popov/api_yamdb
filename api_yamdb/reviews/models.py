@@ -4,13 +4,14 @@ from django.conf import settings
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from api_yamdb.settings import LEN_NAME, LEN_TEXT, LEN_SLUG
 from users.models import User
 
 
 class Title(models.Model):
     """Модель произведений."""
 
-    name = models.CharField('Название произведения', max_length=256)
+    name = models.CharField('Название произведения', max_length=LEN_NAME)
     year = models.PositiveSmallIntegerField('Год произведения', db_index=True)
     category = models.ForeignKey('Category', on_delete=models.SET_NULL,
                                  null=True, blank=True, related_name='titles')
@@ -21,6 +22,8 @@ class Title(models.Model):
         """Мета класс."""
 
         ordering = ['name']
+        verbose_name = 'Произведение'
+        verbose_name_plural = 'Произведения'
 
     def __str__(self):
         """Метод возвращает имя объекта."""
@@ -79,7 +82,8 @@ class Review(BaseReview):
         ]
 
     def __str__(self) -> str:
-        return self.text[:15]
+        """Метод возвращает 15 символов отзыва."""
+        return self.text[:LEN_TEXT]
 
 
 class Comments(BaseReview):
@@ -99,19 +103,22 @@ class Comments(BaseReview):
         ordering = ('pub_date',)
 
     def __str__(self) -> str:
-        return self.text[:15]
+        """Метод возвращает 15 символов комментария."""
+        return self.text[:LEN_TEXT]
 
-
+      
 class Category(models.Model):
     """Модель категорий."""
 
-    name = models.CharField('Название категории', max_length=256)
-    slug = models.SlugField('Слаг категории', max_length=50, unique=True)
+    name = models.CharField('Название категории', max_length=LEN_NAME)
+    slug = models.SlugField('Слаг категории', max_length=LEN_SLUG, unique=True)
 
     class Meta:
         """Мета класс."""
 
         ordering = ['name']
+        verbose_name = 'Категория'
+        verbose_name_plural = 'Категории'
 
     def __str__(self):
         """Метод возвращает слаг объекта."""
@@ -121,13 +128,15 @@ class Category(models.Model):
 class Genre(models.Model):
     """Модель жанра."""
 
-    name = models.CharField('Жанр', max_length=256)
-    slug = models.SlugField('Слаг', max_length=50, unique=True)
+    name = models.CharField('Жанр', max_length=LEN_NAME)
+    slug = models.SlugField('Слаг', max_length=LEN_SLUG, unique=True)
 
     class Meta:
         """Мета класс."""
 
         ordering = ['name']
+        verbose_name = 'Жанр'
+        verbose_name_plural = 'Жанры'
 
     def __str__(self):
         """Метод возвращает слаг объекта."""
@@ -139,6 +148,11 @@ class GenreTitle(models.Model):
 
     genre = models.ForeignKey(Genre, on_delete=models.CASCADE)
     title = models.ForeignKey(Title, on_delete=models.CASCADE)
+
+    class Meta:
+        """Мета класс."""
+
+        verbose_name = 'Жанр-Произведение'
 
     def __str__(self):
         """Возвращает принадлежность произведения к жанру."""

@@ -1,17 +1,14 @@
 """Модуль сериалайзеров."""
+from datetime import datetime
 
 from django.conf import settings
-from django.db.models import Avg
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
-from reviews.models import Category
-from reviews.models import Comments
-from reviews.models import Genre
-from reviews.models import Review
-from reviews.models import Title
 from api.permissions import IsAdminOrStaff
+from api_yamdb.settings import LEN_USERNAME, LEN_CONFIRMATION_CODE, MIN_YEAR
+from reviews.models import Category, Comments, Genre, Review, Title
 from users.models import User
-
 
 USERNAME_CHECK = r'^[\w.@+-]+$'  # Проверка имени на отсутствие спецсимволов
 
@@ -31,12 +28,12 @@ class AuthTokenSerializer(serializers.Serializer):
 
     username = serializers.RegexField(
         regex=USERNAME_CHECK,
-        max_length=150,
+        max_length=LEN_USERNAME,
         required=True
     )
     confirmation_code = serializers.CharField(
         required=True,
-        max_length=16,
+        max_length=LEN_CONFIRMATION_CODE,
     )
 
 
@@ -78,7 +75,6 @@ class GenreSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатор для отзывов на произведения."""
 
-
     author = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True,
@@ -109,6 +105,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         """Мета класс."""
 
         fields = '__all__'
+        read_only_fields = ['title']
         model = Review
         read_only_fields = ['title']
 
@@ -140,11 +137,9 @@ class TitleSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='slug',
         queryset=Genre.objects.all())
-    rating = serializers.SerializerMethodField()
-
-    def get_rating(self, obj):
-        """Вычисление среднего значения оценок для произведения."""
-        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
+    year = serializers.IntegerField(
+        validators=[MinValueValidator(MIN_YEAR),
+                    MaxValueValidator(datetime.now().year)])
 
     class Meta:
         """Мета класс."""
@@ -158,14 +153,10 @@ class TitleGetSerializer(serializers.ModelSerializer):
 
     category = CategorySerializer()
     genre = GenreSerializer(many=True)
-    rating = serializers.SerializerMethodField()
+    rating = serializers.IntegerField()
 
     class Meta:
         """Мета класс."""
 
         model = Title
         fields = '__all__'
-
-    def get_rating(self, obj):
-        """Вычисление среднего значения оценок для произведения."""
-        return obj.reviews.aggregate(Avg('score', default=0)).get('score__avg')
